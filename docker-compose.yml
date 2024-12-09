@@ -1,0 +1,38 @@
+name: rustdesk
+services:
+  server:
+    image: rustdesk/rustdesk-server:latest
+    container_name: rustdesk-hbbs
+    hostname: hbbs
+    restart: always
+    command: hbbs -r 142.171.254.123:21117 -k ""
+    ports:
+      - 21115:21115/tcp
+      - 21116:21116/tcp
+      - 21116:21116/udp
+      - 21118:21118/tcp
+    volumes:
+      - /var/lib/srv/$USER/docker/rustdesk/rustdesk-server/latest/rootfs/data:/root
+    depends_on:
+      - relay
+    networks:
+      - rustdesk
+
+  relay:
+    image: rustdesk/rustdesk-server:latest
+    container_name: rustdesk-hbbr
+    hostname: hbbr
+    restart: always
+    command: hbbr -k ""
+    ports:
+      - 21117/tcp
+      - 21119/tcp
+    volumes:
+      - /var/lib/srv/$USER/docker/rustdesk/rustdesk-server/latest/rootfs/data:/root
+    networks:
+      - rustdesk
+
+networks:
+  rustdesk:
+    name: rustdesk
+    external: false
