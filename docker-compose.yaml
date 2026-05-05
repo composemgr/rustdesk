@@ -27,7 +27,7 @@ services:
       - 21118:21118/tcp
       - 172.17.0.1:21114:21114/tcp
     volumes:
-      - './rootfs/data/server:/root'
+      - './volumes/data/server:/root'
     depends_on:
       - relay
     networks:
@@ -45,7 +45,7 @@ services:
       - 21117/tcp
       - 21119/tcp
     volumes:
-      - './rootfs/data/relay:/root'
+      - './volumes/data/relay:/root'
     networks:
       - rustdesk
 
