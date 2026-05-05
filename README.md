@@ -46,8 +46,8 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/server` - Data storage
-- `./rootfs/data/relay` - Data storage
+- `./volumes/data/server` - Data storage
+- `./volumes/data/relay` - Data storage
 
 ## 🔍 Logging
 
