@@ -21,6 +21,8 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-server
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117 -k ""
     ports:
       - 21115:21115/tcp
@@ -34,6 +36,24 @@ services:
       - relay
     networks:
       - rustdesk
+      - proxy
+      - cloudflare
+    labels:
+      - 'traefik.enable=true'
+      - 'cloudflare.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'cloudflare.service=http://rustdesk-server:21114'
+      - 'cloudflare.hostname=rustdesk.${CLOUDFLARE_ZONE_NAME:-}'
+      - 'traefik.http.routers.rustdesk-server.entrypoints=http'
+      - 'traefik.http.routers.rustdesk-server-secure.tls=true'
+      - 'traefik.http.routers.rustdesk-server.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.middlewares.rustdesk-server-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.rustdesk-server.middlewares=rustdesk-server-https-redirect'
+      - 'traefik.http.routers.rustdesk-server-secure.entrypoints=https'
+      - 'traefik.http.routers.rustdesk-server-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
+      - 'traefik.http.routers.rustdesk-server-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.rustdesk-server-secure.service=rustdesk-server'
+      - 'traefik.http.services.rustdesk-server.loadbalancer.server.port=21114'
 
   relay:
     <<: *rustdesk-image
@@ -44,6 +64,7 @@ services:
     logging: *default-logging
     environment:
       TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-relay
     command: hbbr -k ""
     ports:
       - 21117/tcp
@@ -57,3 +78,7 @@ networks:
   rustdesk:
     name: rustdesk
     external: false
+  proxy:
+    external: true
+  cloudflare:
+    external: true
