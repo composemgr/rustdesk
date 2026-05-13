@@ -19,7 +19,9 @@ services:
     restart: always
     pull_policy: always
     logging: *default-logging
-    command: hbbs -r 142.171.254.123:21117 -k ""
+    environment:
+      TZ: ${TZ:-America/New_York}
+    command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117 -k ""
     ports:
       - 21115:21115/tcp
       - 21116:21116/tcp
@@ -40,6 +42,8 @@ services:
     restart: always
     pull_policy: always
     logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
     command: hbbr -k ""
     ports:
       - 21117/tcp
