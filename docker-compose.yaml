@@ -1,20 +1,17 @@
-# nginx proxy address - http://172.17.0.1:21114
-name: rustdesk
+# nginx proxy address - http://172.17.0.1:64333
 
+name: rustdesk
 x-logging: &default-logging
   options:
     max-size: '5m'
     max-file: '1'
   driver: json-file
 
-x-shared:
-  rustdesk-image: &rustdesk-image
-    image: docker.io/rustdesk/rustdesk-server-pro:latest
-
 services:
   server:
-    <<: *rustdesk-image
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
     container_name: rustdesk-server
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: hbbs
     restart: always
     pull_policy: always
@@ -23,41 +20,25 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: rustdesk-server
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
-    command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117 -k ""
+    command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117
     ports:
-      - 21115:21115/tcp
-      - 21116:21116/tcp
-      - 21116:21116/udp
-      - 21118:21118/tcp
-      - 172.17.0.1:21114:21114/tcp
+      - '172.17.0.1:64333:21114/tcp'
+      - '21115:21115/tcp'
+      - '21116:21116/tcp'
+      - '21116:21116/udp'
+      - '21118:21118/tcp'
+      - '21119:21119/tcp'
     volumes:
-      - './volumes/data/server:/root'
+      - './volumes/data/server:/root:z'
     depends_on:
       - relay
     networks:
       - rustdesk
-      - proxy
-      - cloudflare
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://rustdesk-server:21114'
-      - 'cloudflare.hostname=rustdesk.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.rustdesk-server.entrypoints=http'
-      - 'traefik.http.routers.rustdesk-server-secure.tls=true'
-      - 'traefik.http.routers.rustdesk-server.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.rustdesk-server-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.rustdesk-server.middlewares=rustdesk-server-https-redirect'
-      - 'traefik.http.routers.rustdesk-server-secure.entrypoints=https'
-      - 'traefik.http.routers.rustdesk-server-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.rustdesk-server-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.rustdesk-server-secure.service=rustdesk-server'
-      - 'traefik.http.services.rustdesk-server.loadbalancer.server.port=21114'
 
   relay:
-    <<: *rustdesk-image
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
     container_name: rustdesk-relay
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: hbbr
     restart: always
     pull_policy: always
@@ -65,12 +46,11 @@ services:
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: rustdesk-relay
-    command: hbbr -k ""
+    command: hbbr
     ports:
-      - 21117/tcp
-      - 21119/tcp
+      - '21117:21117/tcp'
     volumes:
-      - './volumes/data/relay:/root'
+      - './volumes/data/relay:/root:z'
     networks:
       - rustdesk
 
@@ -78,7 +58,3 @@ networks:
   rustdesk:
     name: rustdesk
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true

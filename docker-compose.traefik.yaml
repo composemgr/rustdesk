@@ -1,0 +1,65 @@
+
+name: rustdesk
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  server:
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    container_name: rustdesk-server
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: hbbs
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-server
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117
+    volumes:
+      - './volumes/data/server:/root:z'
+    depends_on:
+      - relay
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.rustdesk-server.entrypoints=http'
+      - 'traefik.http.routers.rustdesk-server.rule=Host(${BASE_HOST_NAME:-$HOSTNAME})'
+      - 'traefik.http.routers.rustdesk-server.middlewares=rustdesk-server-https-redirect'
+      - 'traefik.http.middlewares.rustdesk-server-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.rustdesk-server-secure.entrypoints=https'
+      - 'traefik.http.routers.rustdesk-server-secure.rule=Host(${BASE_HOST_NAME:-$HOSTNAME})'
+      - 'traefik.http.routers.rustdesk-server-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.rustdesk-server-secure.service=rustdesk-server'
+      - 'traefik.http.services.rustdesk-server.loadbalancer.server.port=21114'
+    networks:
+      - rustdesk
+      - traefik
+
+  relay:
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    container_name: rustdesk-relay
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: hbbr
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-relay
+    command: hbbr
+    volumes:
+      - './volumes/data/relay:/root:z'
+    networks:
+      - rustdesk
+
+networks:
+  rustdesk:
+    name: rustdesk
+    external: false
+  traefik:
+    external: true

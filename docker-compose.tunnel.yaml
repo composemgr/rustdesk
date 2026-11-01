@@ -1,0 +1,57 @@
+
+name: rustdesk
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  server:
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    container_name: rustdesk-server
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: hbbs
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-server
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117
+    volumes:
+      - './volumes/data/server:/root:z'
+    depends_on:
+      - relay
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://rustdesk-server:21114'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - rustdesk
+      - cloudflare
+
+  relay:
+    image: docker.io/rustdesk/rustdesk-server-pro:latest
+    container_name: rustdesk-relay
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: hbbr
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: rustdesk-relay
+    command: hbbr
+    volumes:
+      - './volumes/data/relay:/root:z'
+    networks:
+      - rustdesk
+
+networks:
+  rustdesk:
+    name: rustdesk
+    external: false
+  cloudflare:
+    external: true
