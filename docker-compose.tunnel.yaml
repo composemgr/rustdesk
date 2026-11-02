@@ -20,6 +20,12 @@ services:
       CONTAINER_NAME: rustdesk-server
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
     command: hbbs -r ${RUSTDESK_RELAY_HOST:-127.0.0.1}:21117
+    ports:
+      - '21115:21115'
+      - '21116:21116'
+      - '21116:21116/udp'
+      - '21118:21118'
+      - '21119:21119'
     volumes:
       - './volumes/data/server:/root:z'
     depends_on:
@@ -44,6 +50,8 @@ services:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: rustdesk-relay
     command: hbbr
+    ports:
+      - '21117:21117'
     volumes:
       - './volumes/data/relay:/root:z'
     networks:
